@@ -11,6 +11,7 @@ args = {
     "maxForce": 0.1,
     "r": 18,
     "perception": 50,
+    "N_grids": 2,
 }
 args = {
     "N": 3,
@@ -21,6 +22,7 @@ args = {
     "maxForce": 0.1,
     "r": 10,
     "perception": 50,
+    "N_grids": 10,
 }
 
 width = args["width"]
@@ -125,13 +127,13 @@ class player:
 
     def screenLoop(self):
         if self.position[0] > width:
-            self.position[0] = 0
+            self.position[0] = 0 + 1e-1
         elif self.position[0] < 0:
-            self.position[0] = width
+            self.position[0] = width - 1e-1
         if self.position[1] > height:
-            self.position[1] = 0
+            self.position[1] = 0 + 1e-1
         elif self.position[1] < 0:
-            self.position[1] = height
+            self.position[1] = height - 1e-1
 
     def update(self):
         self.velocity += self.acceleration
@@ -167,13 +169,24 @@ def battle(players):
 
 
 def update(players):
-    playerSplit = {}
-    for i in types:
-        playerSplit[i] = [p for p in players if p.type == i]
+    playerGridSplit = gridSplit(players)
+    for players in playerGridSplit.values():
+        playerSplit = {}
+        for i in types:
+            playerSplit[i] = [p for p in players if p.type == i]
+        for p in players:
+            p.flock(playerSplit)
+            p.update()
+        battle(players)
+
+
+def gridSplit(players):
+    playerGridSplit = {i: [] for i in range(args["N_grids"] ** 2)}
     for p in players:
-        p.flock(playerSplit)
-        p.update()
-    battle(players)
+        i = p.position[0] // (args["width"] / args["N_grids"])
+        j = p.position[1] // (args["height"] / args["N_grids"])
+        playerGridSplit[args["N_grids"] * i + j].append(p)
+    return playerGridSplit
 
 
 def draw(screen, players):
