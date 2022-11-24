@@ -4,26 +4,16 @@ from math import pi, sin, cos, sqrt
 
 args = {
     "N": 3,
-    "N_players": 50,
+    "N_players": 75,
     "width": 1000,
     "height": 1000,
     "maxSpeed": 2,
     "maxForce": 0.1,
     "r": 18,
     "perception": 50,
-    "N_grids": 2,
+    "N_grids": 3,
 }
-args = {
-    "N": 3,
-    "N_players": 500,
-    "width": 1000,
-    "height": 1000,
-    "maxSpeed": 2,
-    "maxForce": 0.1,
-    "r": 10,
-    "perception": 50,
-    "N_grids": 10,
-}
+
 
 width = args["width"]
 height = args["height"]
@@ -40,6 +30,14 @@ for i in types:
     enemies[i] = (i - 1) % N
 if N == 3:
     colours = {0: [100, 255, 255], 1: [255, 100, 255], 2: [255, 255, 100]}
+if N == 5:
+    colours = {
+        0: [100, 255, 255],
+        1: [255, 100, 255],
+        2: [255, 255, 100],
+        3: [100, 100, 100],
+        4: [255, 255, 255],
+    }
 
 
 class player:
@@ -121,7 +119,7 @@ class player:
         self.acceleration += self.align(playerSplit[self.type])
         self.acceleration += self.cohesion(playerSplit[self.type])
         self.acceleration += self.cohesion(playerSplit[targets[self.type]])
-        self.acceleration -= self.cohesion(playerSplit[enemies[self.type]])
+        self.acceleration -= 5 * self.cohesion(playerSplit[enemies[self.type]])
         self.acceleration += 10 * self.avoidWalls()
         self.acceleration = setMag(self.acceleration, self.maxForce)
 
