@@ -2,6 +2,7 @@ import pygame, sys
 import numpy as np
 from math import pi, sin, cos, sqrt
 
+
 args = {
     "N": 3,
     "N_players": 75,
@@ -12,37 +13,13 @@ args = {
     "r": 18,
     "perception": 50,
     "N_grids": 3,
+    "draw": "image",
 }
-
-
-width = args["width"]
-height = args["height"]
-N_players = args["N_players"]
-N = args["N"]
-
-types = np.arange(N)
-targets, enemies, colours = {}, {}, {}
-for i in types:
-    colours[i] = 255 * np.array(
-        [sin(pi * i / N), 0.5 * sin((i / N + 1) * pi / 2), 0.5 * sin(i / N + 1)]
-    )
-    targets[i] = (i + 1) % N
-    enemies[i] = (i - 1) % N
-if N == 3:
-    colours = {0: [100, 255, 255], 1: [255, 100, 255], 2: [255, 255, 100]}
-if N == 5:
-    colours = {
-        0: [100, 255, 255],
-        1: [255, 100, 255],
-        2: [255, 255, 100],
-        3: [100, 100, 100],
-        4: [255, 255, 255],
-    }
 
 
 class player:
     def __init__(self):
-        self.position = width * np.random.rand(2)
+        self.position = args["width"] * np.random.rand(2)
         self.velocity = np.random.normal(0, 1, 2)
         self.acceleration = np.zeros(2)
         self.type = np.random.choice(types)
@@ -50,12 +27,16 @@ class player:
         self.maxForce = args["maxForce"]
         self.r = args["r"]
         self.perception = args["perception"]
+        self.draw = self.drawCircle if args["draw"] == "circle" else self.drawImage
 
     def update_random(self):
         a = 2 * pi * np.random.rand()
         self.position += self.maxSpeed * np.array((sin(a), cos(a)))
 
-    def draw(self, screen):
+    def drawImage(self, screen):
+        screen.blit(images[self.type], self.position - self.r)
+
+    def drawCircle(self, screen):
         pygame.draw.circle(screen, colours[self.type], self.position, self.r)
 
     def distance(self, v):
@@ -105,9 +86,9 @@ class player:
         desired = np.zeros(2)
         for wall in [
             np.array((0, self.position[1])),
-            np.array((width, self.position[1])),
+            np.array((args["width"], self.position[1])),
             np.array((self.position[0], 0)),
-            np.array((self.position[0], height)),
+            np.array((self.position[0], args["height"])),
         ]:
             if self.canSee(wall):
                 diff = self.position - wall
@@ -124,14 +105,14 @@ class player:
         self.acceleration = setMag(self.acceleration, self.maxForce)
 
     def screenLoop(self):
-        if self.position[0] > width:
+        if self.position[0] > args["width"]:
             self.position[0] = 0 + 1e-1
         elif self.position[0] < 0:
-            self.position[0] = width - 1e-1
-        if self.position[1] > height:
+            self.position[0] = args["width"] - 1e-1
+        if self.position[1] > args["height"]:
             self.position[1] = 0 + 1e-1
         elif self.position[1] < 0:
-            self.position[1] = height - 1e-1
+            self.position[1] = args["height"] - 1e-1
 
     def update(self):
         self.velocity += self.acceleration
@@ -196,20 +177,35 @@ def draw(screen, players):
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_q:
+                print("enter")
+                return True
+    return False
 
 
-def main():
+if __name__ == "__main__":
     pygame.init()
     clock = pygame.time.Clock()
-    screen = pygame.display.set_mode((width, height))
-    players = np.array([player() for _ in range(N_players)])
-    i = 0
+    screen = pygame.display.set_mode((args["width"], args["height"]))
+    colours = {0: [100, 255, 255], 1: [255, 100, 255], 2: [255, 255, 100]}
+    images = {}
+    for i, picture in enumerate(
+        [
+            pygame.image.load("rock.png").convert(),
+            pygame.image.load("paper.png").convert(),
+            pygame.image.load("scissors.png").convert(),
+        ]
+    ):
+        images[i] = pygame.transform.scale(picture, (2 * args["r"], 2 * args["r"]))
+    types = np.arange(args["N"])
+    targets, enemies = {}, {}
+    for i in types:
+        targets[i] = (i + 1) % args["N"]
+        enemies[i] = (i - 1) % args["N"]
+    players = np.array([player() for _ in range(args["N_players"])])
     while True:
-        i += 1
-        if i == 1000:
-            continue
-        update(players)
-        draw(screen, players)
-
-
-main()
+        reset = False
+        while not reset:
+            update(players)
+            reset = draw(screen, players)
